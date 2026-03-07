@@ -1,0 +1,59 @@
+// --- SYSTEME DE RANGS POUR OBBY
+
+// Ici je liste mon staff. Oubliez pas de mettre VOTRE pseudo à la place du mien !
+const STAFF = {
+    OWNER: "Cyborg_Luca", 
+    CO_OWNERS: {
+        "BOYhumanSigma": "yellow",
+        "X_belle_fleur_677_X": "pink",
+        "BestWizard119": "cyan"
+    },
+    ADMINS: {
+        "Lord_Petit_Gueff_X": "Black"
+    }
+};
+
+// C'est cette fonction qui fabrique le look du message dans le chat
+function formaterMsg(role, nom, message, couleurSpeciale) {
+    const RANGS = {
+        O:  { label: "[👑OWNER👑] ",  color: "blue" },
+        CO: { label: "[⚡CO-OWNER⚡] ", color: "aqua" },
+        AD: { label: "[🌟ADMIN🌟] ",  color: "green" },
+        P:  { label: "[🎮player🎮] ", color: "orange" }
+    };
+
+    const config = RANGS[role] || RANGS.P;
+    const couleurFinale = couleurSpeciale || config.color;
+
+    return [
+        { str: config.label, style: { color: couleurFinale } }, 
+        { str: nom, style: { color: couleurFinale } },          
+        { str: ": " + message, style: { color: "aqua" } }       
+    ];
+}
+
+// Le moteur du chat : ça s'active dès qu'un joueur lâche un message
+onPlayerChat = (id, msg) => {
+    const nomJoueur = api.getEntityName(id).trim(); // Le trim() c'est pour éviter les bugs d'espaces
+    let rang = "P"; 
+    let couleurPerso;
+
+    // Petite vérif pour savoir qui parle
+    if (nomJoueur === STAFF.OWNER) {
+        rang = "O";
+    } else if (nomJoueur in STAFF.CO_OWNERS) {
+        rang = "CO";
+        couleurPerso = STAFF.CO_OWNERS[nomJoueur];
+    } else if (nomJoueur in STAFF.ADMINS) {
+        rang = "AD";
+        couleurPerso = STAFF.ADMINS[nomJoueur];
+    }
+
+    // Si c'est un membre du staff, on utilise mon formatage custom
+    if (rang !== "P") {
+        api.broadcastMessage(formaterMsg(rang, nomJoueur, msg, couleurPerso));
+        return false; // Important : ça évite que le message s'affiche deux fois
+    }
+
+    return true; 
+};
