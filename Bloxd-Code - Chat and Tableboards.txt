@@ -1,3 +1,4 @@
+//Code created by @Cyborg_Luca
 const STAFF = {
     OWNER: "Cyborg_Luca",
     CO_OWNERS: {
@@ -88,3 +89,4 @@ function tick() {
         lastHudUpdate = Date.now();
     }
 }
+
