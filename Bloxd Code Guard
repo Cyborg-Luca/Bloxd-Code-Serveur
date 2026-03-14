@@ -1,0 +1,80 @@
+const STAFF = {
+    OWNER: "Cyborg_Luca",
+    CO_OWNERS: { "Co-owner1": "yellow", "Co-owner2": "pink", "Co-owner3": "cyan" },
+    ADMINS: { "Admin1": "Black" }
+};
+
+const OBJETS_INTERDITS = ["Minigun", "AWP", "Kill Spikes", "Custom Lobby Block", "Floor Creator", "Ice Bridge", "Checkpoint Block", "Fireball Block", "Iceball Block", "Block of Emerald","Blue Concrete"];
+
+//Zone réservée au staff
+const ZONES_BLOCS = [
+    { min: [-289, 1.00, -168], max: [-278, 6, -178] },
+    { min: [-289, 1.00, -168], max: [-278, 6, -178] }
+];
+
+//Zone spawn protégée
+const ZONES_SAFE = [
+    { min: [-289, 1.00, -168], max: [-278, 6, -178] },
+    { min: [-500, 60, 100], max: [-300, 200, 300] },
+    { min: [200, 80, 500], max: [400, 180, 700] }
+];
+
+function estStaff(n) {
+    return n === STAFF.OWNER || n in STAFF.CO_OWNERS || n in STAFF.ADMINS;
+}
+
+function estDansUneZone(pos, zones) {
+    if (!pos || !zones) return false;
+    return zones.some(zone =>
+        pos[0] >= Math.min(zone.min[0], zone.max[0]) && pos[0] <= Math.max(zone.min[0], zone.max[0]) &&
+        pos[1] >= Math.min(zone.min[1], zone.max[1]) && pos[1] <= Math.max(zone.min[1], zone.max[1]) &&
+        pos[2] >= Math.min(zone.min[2], zone.max[2]) && pos[2] <= Math.max(zone.min[2], zone.max[2])
+    );
+}
+
+onPlayerAttack = (attackerId, victimId) => {
+    if (!victimId) return true;
+    const victimPos = api.getPosition(victimId);
+    const attackerName = api.getEntityName(attackerId).trim();
+    if (victimPos && estDansUneZone(victimPos, ZONES_SAFE)) {
+        if (estStaff(attackerName)) return true;
+        api.sendMessage(attackerId, "⚠️ Vous ne pouvez pas attaquer dans cette zone !", { color: "red" });
+        return false;
+    }
+    return true;
+};
+
+onPlayerDamagingOtherPlayer = (attackerId, victimId, damage) => {
+    if (!victimId) return damage;
+    const victimPos = api.getPosition(victimId);
+    const attackerName = api.getEntityName(attackerId).trim();
+    if (victimPos && estDansUneZone(victimPos, ZONES_SAFE)) {
+        if (estStaff(attackerName)) return damage;
+        api.sendMessage(attackerId, "⚠️ Zone safe : aucun combat autorisé ici !", { color: "red" });
+        return 0;
+    }
+    return damage;
+};
+
+onPlayerClick = (id) => {
+    const nom = api.getEntityName(id).trim();
+    ZONES_BLOCS.forEach(zone => {
+        if (estStaff(nom)) {
+            api.setCanChangeBlockRect(id, zone.min, zone.max);
+        } else {
+            api.setCantChangeBlockRect(id, zone.min, zone.max);
+        }
+    });
+};
+
+onInventoryUpdated = (p) => {
+    const nom = api.getEntityName(p).trim();
+    if (estStaff(nom)) return;
+    for (let i = 0; i < 51; i++) {
+        const s = api.getItemSlot(p, i);
+        if (s && OBJETS_INTERDITS.includes(s.name)) {
+            api.removeItemName(p, s.name, s.amount);
+            api.sendMessage(p, "⚠️ Cet objet est interdit sur le serveur !", { color: "red" });
+        }
+    }
+};
