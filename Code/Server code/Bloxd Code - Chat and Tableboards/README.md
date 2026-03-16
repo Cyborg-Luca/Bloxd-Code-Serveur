@@ -1,6 +1,10 @@
 # Bloxd Code - Chat and Tableboards (Part 1)
 
-This repository contains the official script for the tutorial "Bloxd Code - Chat and notice board". This code is designed for Bloxd.io private servers using the scripting API.
+This repository contains the official script for the tutorial "Code pour Serveur - Partie 1". This code is designed for Bloxd.io private servers using the scripting API.
+
+## Configuration
+
+You can customize the script by editing the constants at the top of the file:
 
 ### Chat System
 - Automatic Ranks: Assigns prefixes for OWNER, CO-OWNER, and ADMIN roles.
@@ -28,4 +32,4 @@ const STAFF = {
     }
 };
 
-By @Cyborg_Luca
+*Developed for server management by Cyborg_Luca.*
