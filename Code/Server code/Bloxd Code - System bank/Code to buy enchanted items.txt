@@ -1,0 +1,16 @@
+const COST = 1000;
+const ITEM = "Diamond Gauntlets";
+
+if(getBankBalance(myId) >= COST) {
+    if(removeBankBalance(myId, COST)) {
+        api.giveItem(myId, ITEM,1 , { 
+            customAttributes: {
+                enchantments: {"Health": 5},
+                enchantmentTier: "Tier 5",
+            }
+        });
+        api.sendMessage(myId, "✅ Item créé! Coût: " + COST + " Gold", {color: "green"});
+    }
+} else {
+    api.sendMessage(myId, "❌ Il faut " + COST + " Gold Coins", {color: "red"});
+}

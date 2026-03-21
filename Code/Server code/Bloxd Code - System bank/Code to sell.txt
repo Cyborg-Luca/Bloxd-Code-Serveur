@@ -1,0 +1,70 @@
+const items = {
+    "Bread": 10000000, "Apple": 4, "Corn": 1, "Bowl of Rice": 1, "Plum": 2,
+    "Coconut": 2, "Cracked Coconut": 2, "Pear": 2, "Cherry": 2,
+    "Watermelon Slice": 4, "Gold Watermelon Slice": 1, "Melon Slice": 4,
+    "Gold Melon Slice": 1, "Pumpkin Pie": 5, "Cornbread": 1,
+    "Chili Pepper": 2, "Raw Porkchop": 3, "Cooked Porkchop": 5,
+    "Raw Beef": 3, "Steak": 5, "Raw Mutton": 3, "Cooked Mutton": 5,
+    "Wheat": 1, "Carrot": 2, "Beetroot": 2, "Raw Potato": 1,
+    "Banana": 3, "Pumpkin": 5, "Cotton": 1, "Raw Venaison": 5,
+    "Cooked Potato": 3, "Cooked Venaison": 8, "Acorn Jelly": 8, "Acorn": 8
+};
+
+const bankSlot = 0;
+
+function getBalance(p) {
+    const item = api.getMoonstoneChestItemSlot(p, bankSlot);
+    if (!item || item.name !== "Block of Emerald") return 0;
+    if (item.attributes && item.attributes.customDisplayName) {
+        const match = item.attributes.customDisplayName.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+    }
+    return 0;
+}
+
+function setBalance(p, amount) {
+    amount = Math.max(0, amount);
+    api.setMoonstoneChestItemSlot(p, bankSlot, "Block of Emerald", 1, {
+        customDisplayName: amount + " Gold"
+    });
+}
+
+function vendre() {
+    const playerId = myId;
+    const item = api.getHeldItem(playerId);
+    
+    if (!item || item.name === "Air") {
+        api.sendMessage(playerId, "Tenez un item à vendre", {color: "red"});
+        return;
+    }
+    
+    const prix = items[item.name];
+    if (!prix) {
+        api.sendMessage(playerId, "Item non vendable", {color: "red"});
+        return;
+    }
+
+    let hasItem = false;
+    for (let i = 0; i < 56; i++) {
+        const slot = api.getItemSlot(playerId, i);
+        if (slot && slot.name === item.name && slot.amount > 0) {
+            hasItem = true;
+            break;
+        }
+    }
+    
+    if (!hasItem) {
+        api.sendMessage(playerId, "Vous n'avez pas cet item", {color: "red"});
+        return;
+    }
+    
+    api.removeItemName(playerId, item.name, 1);
+    
+    const ancienSolde = getBalance(playerId);
+    const nouveauSolde = ancienSolde + prix;
+    setBalance(playerId, nouveauSolde);
+    
+    api.sendMessage(playerId, `Vendu pour ${prix} Gold. Solde: ${nouveauSolde}`, {color: "gold"});
+}
+
+vendre();

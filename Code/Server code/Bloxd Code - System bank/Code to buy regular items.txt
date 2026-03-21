@@ -1,0 +1,9 @@
+buyItem = "Code Block"
+buyAmount = 1
+customBuyItemName = "Double Barrel"
+priceAmount = 200
+if(getBankBalance(myId)>=priceAmount)
+{if(removeBankBalance(myId,priceAmount))
+api.giveItem(myId,buyItem,buyAmount,{customDisplayName:customBuyItemName})
+api.sendMessage(myId,"✅ Achat réussi! Solde: "+getBankBalance(myId),{color:"Green"})}
+else{api.sendMessage(myId,"❌ Gold Coins insuffisants!",{color:"Red"})}

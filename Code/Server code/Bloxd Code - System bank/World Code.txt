@@ -1,0 +1,156 @@
+const BANK_ITEM = "Block of Emerald";
+const BANK_SLOT = 0;
+const FIREBALL_ITEM = "Fireball Block";
+const ICEBALL_ITEM = "Iceball Block";
+
+let heldPlayers = {};
+let lastRefresh = Date.now();
+
+getBankBalance = function(p) {
+    try {
+        const i = api.getMoonstoneChestItemSlot(p, BANK_SLOT);
+        if (!i || i.name === "Air") return 0;
+        if (i.name === BANK_ITEM && i.attributes) {
+            const n = i.attributes.customDisplayName;
+            const m = n ? n.match(/(\d+)/) : null;
+            if (m) return parseInt(m[1]) || 0;
+        }
+        return 0;
+    } catch (e) { return 0; }
+}
+
+setBankBalance = function(p, a) {
+    a = Math.max(0, Math.floor(a));
+    api.setMoonstoneChestItemSlot(p, BANK_SLOT, BANK_ITEM, 1, {
+        customDisplayName: `${a} Gold`
+    });
+    return a;
+}
+
+addBankBalance = function(p, a) {
+    return setBankBalance(p, getBankBalance(p) + a);
+}
+
+removeBankBalance = function(p, a) {
+    const c = getBankBalance(p);
+    if (c >= a) {
+        setBankBalance(p, c - a);
+        return true;
+    }
+    return false;
+}
+
+function initBank(p) {
+    const i = api.getMoonstoneChestItemSlot(p, BANK_SLOT);
+    if (!i || i.name === "Air" || i.name !== BANK_ITEM)
+        setBankBalance(p, 0);
+}
+
+function showPanel(p) {
+    const b = getBankBalance(p);
+    api.setClientOption(p, "RightInfoText", [
+        { str: "Welcome to Futur Wars Season 1\n", style: { color: "Red" } },
+        { str: `Players : ${api.getPlayerIds().length}\n\n`, style: { color: "Red" } },
+        { str: `💰 Gold Coins : ${b}\n\n`, style: { color: "Red", fontWeight: "bold" } },
+        { str: "✨OWNER✨ : Cyborg_Luca\n", style: { color: "Orange" } },
+        { str: "⚡CO-OWNER⚡ : BOYhumanSigma,\n", style: { color: "Yellow" } },
+        { str: "X_belle_fleur_677_X, BestWizard119\n\n", style: { color: "Yellow" } },
+        { str: "Server Rules :\n", style: { color: "Green" } },
+        { str: "1. Do not destroy Staff structures\n", style: { color: "Green" } },
+        { str: "2. No insults.\n", style: { color: "Green" } },
+        { str: "3. Do not kill at Spawn, the Forge or\n", style: { color: "Green" } },
+        { str: "    the Cheat Enchants \n\n", style: { color: "Green" } },
+        { str: "Update :\n", style: { color: "Blue" } },
+        { str: "Scoreboard added\n\n", style: { color: "Blue" } },
+        { str: "Events :\n", style: { color: "Indigo" } },
+        { str: "Nothing\n\n", style: { color: "Indigo" } },
+        { str: "Quote of the week :\n\n", style: { color: "Purple" } },
+        { str: "Server Build\n", style: { color: "Purple" } }
+    ]);
+}
+
+function launchPlayer(attackerId) {
+    const victim = heldPlayers[attackerId];
+    if (!victim || !api.checkValid(victim)) {
+        delete heldPlayers[attackerId];
+        return;
+    }
+    const info = api.getPlayerFacingInfo(attackerId);
+    if (info && info.dir) {
+        const d = info.dir;
+        api.applyImpulse(victim, d[0] * 88, Math.max(d[1], 0.15) * 88 + 3, d[2] * 88);
+    }
+    delete heldPlayers[attackerId];
+}
+
+onPlayerJoin = (id) => {
+    initBank(id);
+    showPanel(id);
+    api.sendTopRightHelper(id, "star", "✨ Welcome To Futur Wars ✨", { duration: 10, color: "blue" });
+};
+
+onPlayerChat = (id, msg) => {
+    const n = api.getEntityName(id).trim();
+
+    if (msg === ":LBS") {
+        showPanel(id);
+        return false;
+    }
+
+    if (msg.startsWith(":LBP")) {
+        const args = msg.split(" ");
+        const targetName = args[1];
+        const amount = parseInt(args[2]);
+        const tid = api.getPlayerId(targetName);
+
+        if (!tid) { api.sendMessage(id, "❌ Joueur introuvable.", { color: "red" }); return false; }
+        if (isNaN(amount) || amount <= 0) { api.sendMessage(id, "❌ Montant invalide.", { color: "red" }); return false; }
+
+        if (removeBankBalance(id, amount)) {
+            addBankBalance(tid, amount);
+            showPanel(id);
+            showPanel(tid);
+            api.sendMessage(id, `✅ Tu as envoyé ${amount} Gold à ${targetName}`, { color: "green" });
+            api.sendMessage(tid, `💰 Tu as reçu ${amount} Gold de ${n}`, { color: "gold" });
+        } else {
+            api.sendMessage(id, "❌ Pas assez de Gold.", { color: "red" });
+        }
+        return false;
+    }
+
+    return true;
+};
+
+onPlayerDamagingOtherPlayer = (attacker, victim, damage) => {
+    const held = api.getHeldItem(attacker)?.name;
+    if (held === FIREBALL_ITEM && !heldPlayers[attacker] && api.checkValid(victim)) {
+        heldPlayers[attacker] = victim;
+    }
+};
+
+onPlayerClick = (id) => {
+    const held = api.getHeldItem(id)?.name;
+    if (held === ICEBALL_ITEM && heldPlayers[id]) launchPlayer(id);
+};
+
+tick = () => {
+    for (const attackerId in heldPlayers) {
+        const victim = heldPlayers[attackerId];
+        if (!victim || !api.checkValid(victim)) {
+            delete heldPlayers[attackerId];
+            continue;
+        }
+        const info = api.getPlayerFacingInfo(attackerId);
+        if (!info || !info.dir || !info.camPos) continue;
+        api.setPosition(
+            victim,
+            info.camPos[0] + info.dir[0] * 3,
+            info.camPos[1] + info.dir[1] * 3 + 1.5,
+            info.camPos[2] + info.dir[2] * 3
+        );
+    }
+    if (Date.now() - lastRefresh >= 5000) {
+        api.getPlayerIds().forEach(p => showPanel(p));
+        lastRefresh = Date.now();
+    }
+};
