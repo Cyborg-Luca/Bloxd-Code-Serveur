@@ -1,0 +1,161 @@
+const STAFF = {
+    OWNER: "Cyborg_Luca",
+    CO_OWNERS: {
+        "BOYhumanSigma": "yellow",
+        "X_belle_fleur_677_X": "pink",
+        "BestWizard119": "cyan"
+    },
+    ADMINS: {
+        "Lord_Petit_Gueff_X": "Black"
+    }
+};
+
+const ITEMS = {
+    FIREBALL: "Fireball Block",
+    ICEBALL: "Iceball Block"
+};
+
+const PORTALS = [
+    "Blue Portal",
+    "Red Portal",
+    "Purple Portal",
+    "Yellow Portal",
+    "Code Block"
+];
+
+const TELEPORTS = {
+    Obsidian: [
+        [1, [12, 13], [9, 1, -25]],
+        [5, [-8, -9], [-53, 400, 50]],
+        [52, [-53, -52], [-4, 400, 8]],
+        [5, [0, 1], [-117, 400, 50]],
+        [52, [-117, -116], [-4, 400, 8]],
+        [21, [-1787, -1786], [-5, 400, 52]],
+        [21, [-1782, -1781], [-53, 400, 50]],
+        [21, [-1777, -1776], [-117, 400, 50]]
+    ]
+};
+
+let k = {};
+
+function estStaff(n) {
+    if (!n) return false;
+    const name = n.toLowerCase().trim();
+    const isOwner = name === STAFF.OWNER.toLowerCase().trim();
+    const isCoOwner = Object.keys(STAFF.CO_OWNERS).some(s => s.toLowerCase().trim() === name);
+    const isAdmin = Object.keys(STAFF.ADMINS).some(s => s.toLowerCase().trim() === name);
+    return isOwner || isCoOwner || isAdmin;
+}
+
+onPlayerJoin = (id) => {
+    const n = api.getEntityName(id);
+    if (!n) return;
+    const name = n.trim();
+
+    for (const p of PORTALS) {
+        if (estStaff(name)) {
+            api.setWalkThroughType(id, p, false);
+        } else {
+            api.setWalkThroughType(id, p, false);
+        }
+    }
+};
+
+
+tick = () => {
+    for (const id of api.getPlayerIds()) {
+        const name = api.getEntityName(id)?.trim();
+        if (!estStaff(name)) continue;
+
+        const pos = api.getPosition(id);
+        const block = api.getBlock(
+            Math.floor(pos[0]),
+            Math.floor(pos[1]),
+            Math.floor(pos[2])
+        );
+
+        if (PORTALS.includes(block)) {
+            const info = api.getPlayerFacingInfo(id);
+            if (info && info.dir) {
+                api.setPosition(
+                    id,
+                    pos[0] + info.dir[0] * 2,
+                    pos[1],
+                    pos[2] + info.dir[2] * 2
+                );
+            }
+        }
+    }
+
+    for (const p of api.getPlayerIds()) {
+        if (k[p]) {
+            const victim = k[p];
+            const info = api.getPlayerFacingInfo(p);
+
+            if (info && info.dir && api.checkValid(victim)) {
+                api.setPosition(
+                    victim,
+                    info.camPos[0] + info.dir[0] * 3,
+                    info.camPos[1] + info.dir[1] * 3 + 1.5,
+                    info.camPos[2] + info.dir[2] * 3
+                );
+            } else {
+                delete k[p];
+            }
+        }
+    }
+};
+
+onPlayerClick = (id) => {
+    const playerName = api.getEntityName(id).trim();
+    const item = api.getHeldItem(id)?.name;
+
+    if (!estStaff(playerName)) return;
+
+    const info = api.getPlayerFacingInfo(id);
+    if (!info || !info.dir) return;
+
+    if (item === ITEMS.FIREBALL && !k[id]) {
+        for (const other of api.getPlayerIds()) {
+            if (other === id) continue;
+
+            const pos = api.getPosition(other);
+            const cam = info.camPos;
+
+            const dx = pos[0] - cam[0];
+            const dy = pos[1] - cam[1];
+            const dz = pos[2] - cam[2];
+
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (dist < 6) {
+                k[id] = other;
+                break;
+            }
+        }
+    }
+
+    if (item === ITEMS.ICEBALL && k[id]) {
+        const victim = k[id];
+        if (api.checkValid(victim)) {
+            const d = info.dir;
+            api.applyImpulse(
+                victim,
+                d[0] * 88,
+                Math.max(d[1], 0.15) * 88 + 3,
+                d[2] * 88
+            );
+        }
+        delete k[id];
+    }
+};
+
+onBlockStand = (a, b, c, d, e) => {
+    if (e === "Obsidian") {
+        for (const [bD, pos, dest] of TELEPORTS.Obsidian) {
+            if (d === bD && (b === pos[0] || b === pos[1])) {
+                api.setPosition(a, dest[0], dest[1], dest[2]);
+            }
+        }
+    }
+};

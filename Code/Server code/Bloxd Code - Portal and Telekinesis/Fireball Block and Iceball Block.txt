@@ -1,0 +1,2 @@
+api.giveItem(myId, "Fireball Block", 1)
+api.giveItem(myId, "Iceball Block", 1)
