@@ -1,0 +1,3 @@
+onPlayerJoin = (myId) => {
+api.setClientOption(myId, "respawnButtonText", "Serveur de Cyborg Luca")
+api.setClientOption(myId, "secsToRespawn", 3)};
