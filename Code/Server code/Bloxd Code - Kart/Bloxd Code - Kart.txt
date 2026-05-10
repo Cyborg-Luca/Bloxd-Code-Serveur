@@ -1,0 +1,39 @@
+const STAFF = {
+    OWNER: "Cyborg_Luca",
+    CO_OWNERS: ["CO-OWNER1", "CO-OWNER2", "CO-OWNER3"],
+    ADMINS: ["ADMIN"]
+};
+
+function estStaff(name) {
+    return name === STAFF.OWNER || STAFF.CO_OWNERS.includes(name) || STAFF.ADMINS.includes(name);
+}
+
+onPlayerChat = (id, msg) => {
+    const name = api.getEntityName(id).trim();
+    const args = msg.trim().split(" ");
+    const cmd = args[0].toUpperCase();
+
+    if (!estStaff(name)) return true;
+
+    if (cmd === ":CKART") {
+        api.updateEntityNodeMeshAttachment(id, "TorsoNode", "BloxdBlock", {
+            blockName: "INTERNAL_MESH_Kart",
+            size: 7
+        }, [0, -0.7, 0], [0, 3.15, 0]);
+
+        api.applyEffect(id, "Speed", null, { inbuiltLevel: 10 });
+        api.setPlayerPose(id, "driving");
+        api.sendMessage(id, "Kart activé !");
+        return false;
+    }
+
+    if (cmd === ":CUNKART") {
+        api.updateEntityNodeMeshAttachment(id, "TorsoNode", null);
+        api.removeEffect(id, "Speed");
+        api.setPlayerPose(id, "standing");
+        api.sendMessage(id, "Kart désactivé.");
+        return false;
+    }
+
+    return true;
+};
