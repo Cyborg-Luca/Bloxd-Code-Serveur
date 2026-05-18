@@ -1,0 +1,50 @@
+const STAFF = {
+    OWNER: "Cyborg_Luca",
+    CO_OWNERS: { "CO-OWNER1": "yellow", "CO-OWNER2": "pink", "CO-OWNER3": "cyan" },
+    ADMINS: { "Cyborg_Luca": "black" }
+};
+
+function isStaff(n) {
+    return n === STAFF.OWNER || n in STAFF.CO_OWNERS || n in STAFF.ADMINS;
+}
+
+function checkProtection(target, caller) {
+    target = target.trim();
+    caller = caller.trim();
+    if (target === STAFF.OWNER && caller !== STAFF.OWNER) return true;
+    if (target in STAFF.CO_OWNERS && caller !== STAFF.OWNER) return true;
+    return false;
+}
+
+function handleCommand(id, msg) {
+    const name = api.getEntityName(id).trim();
+    if (!isStaff(name)) return api.sendMessage(id, "❌ Non autorisé.", { color: "red" });
+
+    const [cmd, ...args] = msg.trim().split(" ");
+    const targetName = args[0]?.trim();
+    const targetId = targetName ? api.getPlayerId(targetName) : null;
+
+    if (!targetId) return api.sendMessage(id, "❌ Joueur introuvable.", { color: "red" });
+    if (checkProtection(targetName, name)) return api.sendMessage(id, "❌ Vous ne pouvez pas cibler ce joueur.", { color: "red" });
+
+    switch (cmd) {
+        case ":CBLACK":
+            api.setClientOption(targetId, "cameraTint", [0, 0, 0, 1]);
+            api.sendMessage(id, `⚫ Écran noir appliqué à ${targetName}.`, { color: "gray" });
+            api.sendMessage(targetId, "Votre écran est devenu noir.", { color: "red" });
+            break;
+        case ":CUNBLACK":
+            api.setClientOption(targetId, "cameraTint", [0, 0, 0, 0]);
+            api.sendMessage(id, `⚪ Vision rétablie pour ${targetName}.`, { color: "lime" });
+            api.sendMessage(targetId, "Votre vision est de retour.", { color: "green" });
+            break;
+    }
+}
+
+onPlayerChat = (id, msg) => {
+    if (msg.startsWith(":")) {
+        handleCommand(id, msg);
+        return false;
+    }
+    return true;
+};

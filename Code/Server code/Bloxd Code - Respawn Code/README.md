@@ -28,3 +28,5 @@ onPlayerJoin = (myId) => {
     // Set the delay before respawning is possible (in seconds)
     api.setClientOption(myId, "secsToRespawn", 3);
 };
+
+*Developed for server management by Cyborg_Luca.*
